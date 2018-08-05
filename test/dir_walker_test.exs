@@ -78,4 +78,11 @@ defmodule DirWalkerTest do
      assert Enum.sort(files) == Enum.sort(paths)
   end 
 
+  test "Test for handling symbolic links" do
+    dirw = DirWalker.stream("test/links")
+    files = Enum.into(dirw, [])
+    expected = ["test/links/good_link", "test/links/one_file", "test/links/two_file"]
+    assert Enum.sort(files) == Enum.sort(expected)
+  end
+
 end

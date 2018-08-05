@@ -1,0 +1,50 @@
+dir_walker does not handle symbolic links.
+
+Add this in the test dir:
+ mkdir links        # Create dir for links testing
+ cd links
+ touch one_file two_file      # Create to good files
+ ln -s one_file good_link     # good_link is a valid link
+ ln -s bogus_file bogus_link  # bogus link symlinks to a non-existent file
+ ln -s circle circle          # A circular link
+
+
+At the bottom of dir_walker_test.exs add:
+
+  test "Test for handling symbolic links" do
+    dirw = DirWalker.stream("test/links")
+    files = Enum.into(dirw, [])
+    assert Enum.sort(files) == []
+  end
+
+
+ The unmodified dir_walker bombs:
+
+ mix test
+ ...<minor output>
+
+  1) test Test for handling symbolic links (DirWalkerTest)
+     test/dir_walker_test.exs:81
+     ** (EXIT from #PID<0.192.0>) an exception was raised:
+         ** (File.Error) could not read file stats "test/links/bogus_link": no such file or directory
+             (elixir) lib/file.ex:358: File.stat!/2
+             (dir_walker) lib/dir_walker.ex:120: DirWalker.first_n/4
+             (dir_walker) lib/dir_walker.ex:88: DirWalker.handle_call/3
+             (stdlib) gen_server.erl:636: :gen_server.try_handle_call/4
+             (stdlib) gen_server.erl:665: :gen_server.handle_msg/6
+             (stdlib) proc_lib.erl:247: :proc_lib.init_p_do_apply/3
+
+
+With the modified dir_walker.ex the additional test passes.
+
+I ran across this attempting to run the duper example in Programming
+Elixir 1.6, chapter 19. In the bowels of firefox bad symbolic
+links exist for some reason. 
+
+I don't want to arbitarily remove symbolic links. See the
+discussion at:
+https://unix.stackexchange.com/questions/34248/how-can-i-find-broken-symlinks
+
+
+
+
